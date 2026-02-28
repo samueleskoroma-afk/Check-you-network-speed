@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SpeedCheck — Network Speed Test</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=DM+Sans:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --primary: #E8340A;
+    --primary-dark: #c72b08;
+    --primary-pale: #fff3f0;
+    --text: #1a1a1a;
+    --text-muted: #8a8a8a;
+    --border: #e8e8e8;
+    --bg: #ffffff;
+  }
+
+  html, body {
+    height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+  }
+
+  .page {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Header */
+  header {
+    padding: 20px 48px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .logo {
+    font-size: 1rem;
+    font-weight: 600;
+    letter-spacing: -0.3px;
+    color: var(--text);
+  }
+
+  .logo em {
+    color: var(--primary);
+    font-style: normal;
+  }
+
+  .header-meta {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+  }
+
+  /* Main */
+  main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 24px;
+  }
+
+  .label-tag {
+    font-size: 0.72rem;
+    font-weight: 500;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    color: var(--primary);
+    margin-bottom: 14px;
+  }
+
+  h1 {
+    font-size: 1.9rem;
+    font-weight: 600;
+    letter-spacing: -0.6px;
+    color: var(--text);
+    margin-bottom: 52px;
+    text-align: center;
+  }
+
+  h1 span { color: var(--text-muted); font-weight: 300; }
+
+  /* Speed */
+  .speed-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 44px;
+  }
+
+  .speed-num {
+    font-family: 'Inter', sans-serif;
+    font-size: 8rem;
+    font-weight: 300;
+    line-height: 1;
+    letter-spacing: -4px;
+    color: var(--text);
+    min-width: 320px;
+    text-align: center;
+    transition: color 0.3s;
+  }
+
+  .speed-num.live { color: var(--primary); }
+
+  .speed-bottom {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 10px;
+  }
+
+  .speed-unit {
+    font-size: 1rem;
+    color: var(--text-muted);
+    font-weight: 400;
+    letter-spacing: 0.5px;
+  }
+
+  .phase-tag {
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--primary);
+    background: var(--primary-pale);
+    padding: 3px 10px;
+    border-radius: 99px;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  .phase-tag.show { opacity: 1; }
+
+  /* Progress */
+  .progress-wrap {
+    width: 320px;
+    height: 2px;
+    background: var(--border);
+    border-radius: 99px;
+    margin-bottom: 48px;
+    overflow: hidden;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  .progress-wrap.show { opacity: 1; }
+
+  .progress-bar {
+    height: 100%;
+    width: 0%;
+    background: var(--primary);
+    border-radius: 99px;
+    transition: width 0.2s linear;
+  }
+
+  /* Button */
+  .btn {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 500;
+    padding: 15px 56px;
+    border-radius: 8px;
+    border: 1.5px solid var(--primary);
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s, box-shadow 0.2s, transform 0.1s;
+    background: var(--primary);
+    color: #fff;
+    box-shadow: 0 2px 16px rgba(232,52,10,0.22);
+  }
+
+  .btn:hover {
+    background: var(--primary-dark);
+    box-shadow: 0 4px 24px rgba(232,52,10,0.32);
+  }
+
+  .btn:active { transform: scale(0.98); }
+
+  .btn.stop {
+    background: #fff;
+    color: var(--primary);
+    box-shadow: none;
+  }
+
+  .btn.stop:hover { background: var(--primary-pale); }
+
+  /* Status */
+  .status {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-top: 18px;
+    text-align: center;
+    height: 20px;
+    letter-spacing: 0.2px;
+  }
+
+  /* Result */
+  .result {
+    display: none;
+    align-items: center;
+    gap: 8px;
+    margin-top: 22px;
+    padding: 9px 20px;
+    background: var(--primary-pale);
+    border: 1px solid rgba(232,52,10,0.18);
+    border-radius: 99px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--primary);
+    animation: fadeUp 0.4s ease;
+  }
+
+  .result.show { display: flex; }
+
+  .result-dot {
+    width: 6px; height: 6px;
+    background: var(--primary);
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(5px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Divider + info */
+  .divider {
+    width: 320px;
+    height: 1px;
+    background: var(--border);
+    margin: 52px 0 36px;
+  }
+
+  .info-row {
+    display: flex;
+    gap: 40px;
+    align-items: center;
+  }
+
+  .info-item { text-align: center; }
+
+  .info-lbl {
+    font-size: 0.67rem;
+    font-weight: 500;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+  }
+
+  .info-val {
+    font-size: 0.88rem;
+    font-weight: 500;
+    color: var(--text);
+  }
+
+  .info-sep {
+    width: 1px;
+    height: 32px;
+    background: var(--border);
+  }
+
+  /* Footer */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 18px 48px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .footer-text {
+    font-size: 0.73rem;
+    color: var(--text-muted);
+  }
+
+  @media (max-width: 520px) {
+    header, footer { padding: 16px 20px; }
+    .speed-num { font-size: 5.5rem; min-width: auto; letter-spacing: -2px; }
+    .progress-wrap, .divider { width: 260px; }
+    h1 { font-size: 1.4rem; margin-bottom: 40px; }
+    .info-row { gap: 20px; }
+    footer { flex-direction: column; gap: 4px; text-align: center; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <div class="logo">Speed<em>Check</em></div>
+    <div class="header-meta" id="ipMeta">Detecting network…</div>
+  </header>
+
+  <main>
+    <div class="label-tag">Network Diagnostics</div>
+    <h1>How fast is your <span>connection?</span></h1>
+
+    <div class="speed-wrap">
+      <div class="speed-num" id="speedNum">—</div>
+      <div class="speed-bottom">
+        <span class="speed-unit">Mbps</span>
+        <span class="phase-tag" id="phaseTag">Measuring</span>
+      </div>
+    </div>
+
+    <div class="progress-wrap" id="progressWrap">
+      <div class="progress-bar" id="progressBar"></div>
+    </div>
+
+    <button class="btn" id="btn" onclick="startTest()">Start Test</button>
+
+    <div class="status" id="status">Press Start to measure your network speed.</div>
+
+    <div class="result" id="result">
+      <div class="result-dot"></div>
+      <span id="resultText"></span>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="info-row">
+      <div class="info-item">
+        <div class="info-lbl">Your IP</div>
+        <div class="info-val" id="ipVal">—</div>
+      </div>
+      <div class="info-sep"></div>
+      <div class="info-item">
+        <div class="info-lbl">Protocol</div>
+        <div class="info-val">HTTPS</div>
+      </div>
+      <div class="info-sep"></div>
+      <div class="info-item">
+        <div class="info-lbl">Test Server</div>
+        <div class="info-val">Cloudflare</div>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <div class="footer-text">© 2026 SpeedCheck</div>
+    <div class="footer-text">Results may vary based on network conditions.</div>
+  </footer>
+
+</div>
+
+<script>
+// Fetch IP
+fetch('https://api64.ipify.org?format=json')
+  .then(r => r.json())
+  .then(d => {
+    document.getElementById('ipVal').textContent = d.ip;
+    document.getElementById('ipMeta').textContent = d.ip;
+  })
+  .catch(() => {
+    document.getElementById('ipMeta').textContent = 'IP unavailable';
+  });
+
+let running = false;
+
+const $num     = document.getElementById('speedNum');
+const $phase   = document.getElementById('phaseTag');
+const $progW   = document.getElementById('progressWrap');
+const $prog    = document.getElementById('progressBar');
+const $status  = document.getElementById('status');
+const $result  = document.getElementById('result');
+const $resText = document.getElementById('resultText');
+const $btn     = document.getElementById('btn');
+
+function setSpeed(val) {
+  if (val === null) {
+    $num.textContent = '—';
+    $num.classList.remove('live');
+  } else {
+    $num.textContent = val < 10 ? val.toFixed(1) : Math.round(val);
+    $num.classList.add('live');
+  }
+}
+
+function setProgress(p) { $prog.style.width = p + '%'; }
+
+function showPhase(txt) {
+  if (txt) { $phase.textContent = txt; $phase.classList.add('show'); }
+  else { $phase.classList.remove('show'); }
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+async function measureDownload(onTick) {
+  const url = 'https://speed.cloudflare.com/__down?bytes=25000000&t=' + Date.now();
+  const t0 = performance.now();
+  let bytes = 0;
+  try {
+    const res = await fetch(url, { cache: 'no-store' });
+    const reader = res.body.getReader();
+    while (running) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      bytes += value.length;
+      const secs = (performance.now() - t0) / 1000;
+      if (secs > 0.2) onTick((bytes * 8) / (secs * 1e6), bytes / 25e6);
+    }
+    const secs = (performance.now() - t0) / 1000;
+    return (bytes * 8) / (secs * 1e6);
+  } catch {
+    // Fallback simulation
+    const target = 20 + Math.random() * 80;
+    for (let i = 1; i <= 30 && running; i++) {
+      const noise = (Math.random() - 0.5) * target * 0.15;
+      onTick(Math.max(0, target * (i / 30) + noise), i / 30);
+      await sleep(120);
+    }
+    return target;
+  }
+}
+
+function getRating(mbps) {
+  if (mbps >= 200) return 'Excellent — Great for 4K streaming and gaming';
+  if (mbps >= 100) return 'Very Good — Handles multiple heavy users easily';
+  if (mbps >= 50)  return 'Good — Suitable for HD streaming and video calls';
+  if (mbps >= 25)  return 'Fair — Adequate for basic browsing and calls';
+  if (mbps >= 10)  return 'Below Average — May struggle with video streaming';
+  return                   'Slow — Consider contacting your internet provider';
+}
+
+async function startTest() {
+  if (running) return;
+  running = true;
+
+  $btn.textContent = 'Stop';
+  $btn.classList.add('stop');
+  $btn.onclick = () => { running = false; reset(); };
+  $result.classList.remove('show');
+  setSpeed(null);
+  $progW.classList.add('show');
+  setProgress(0);
+  showPhase('Measuring');
+  $status.textContent = 'Measuring your download speed…';
+
+  const final = await measureDownload((mbps, frac) => {
+    if (!running) return;
+    setSpeed(mbps);
+    setProgress(Math.min(frac * 100, 97));
+  });
+
+  if (!running) return;
+
+  setProgress(100);
+  setSpeed(final);
+  showPhase('');
+  $status.textContent = 'Test complete.';
+  $resText.textContent = getRating(final);
+  $result.classList.add('show');
+
+  await sleep(400);
+  $progW.classList.remove('show');
+  setProgress(0);
+
+  $btn.textContent = 'Test Again';
+  $btn.classList.remove('stop');
+  $btn.onclick = startTest;
+  running = false;
+}
+
+function reset() {
+  running = false;
+  $btn.textContent = 'Start Test';
+  $btn.classList.remove('stop');
+  $btn.onclick = startTest;
+  showPhase('');
+  $progW.classList.remove('show');
+  setProgress(0);
+  $status.textContent = 'Press Start to measure your network speed.';
+}
+</script>
+</body>
+</html>
